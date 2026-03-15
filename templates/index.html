@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overpass Extractor</title>
+  <style>
+    /* ───────────── Themes ───────────── */
+    :root[data-theme="dark"] {
+      --bg:       #282a36;
+      --bg2:      #1e1f29;
+      --surface:  #44475a;
+      --surface2: #343746;
+      --fg:       #f8f8f2;
+      --muted:    #6272a4;
+      --accent:   #bd93f9;
+      --green:    #50fa7b;
+      --orange:   #ffb86c;
+      --red:      #ff5555;
+      --cyan:     #8be9fd;
+      --yellow:   #f1fa8c;
+      --border:   #44475a;
+      --shadow:   rgba(0,0,0,.45);
+      --btn-bg:   #bd93f9;
+      --btn-fg:   #282a36;
+      --btn-hov:  #cfa9ff;
+      --tag:      #343746;
+    }
+    :root[data-theme="light"] {
+      --bg:       #f0f2f5;
+      --bg2:      #e4e7ec;
+      --surface:  #ffffff;
+      --surface2: #f8f9fa;
+      --fg:       #1a1a2e;
+      --muted:    #6c757d;
+      --accent:   #5c6bc0;
+      --green:    #2e7d32;
+      --orange:   #e65100;
+      --red:      #c62828;
+      --cyan:     #0277bd;
+      --yellow:   #f57f17;
+      --border:   #dee2e6;
+      --shadow:   rgba(0,0,0,.10);
+      --btn-bg:   #5c6bc0;
+      --btn-fg:   #ffffff;
+      --btn-hov:  #4a57a8;
+      --tag:      #e9ecef;
+    }
+
+    /* ───────────── Reset / Base ───────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      transition: background .3s, color .3s;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 16px 60px;
+    }
+
+    /* ───────────── Header ───────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    h1 { font-size: 1.45rem; font-weight: 700; }
+    h1 em { font-style: normal; color: var(--accent); }
+    .subtitle { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+    /* ───────────── Theme button ───────────── */
+    .header-btns { display: flex; align-items: center; gap: 10px; }
+
+    #themeBtn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      border-radius: 20px;
+      padding: 7px 16px;
+      cursor: pointer;
+      font-size: .875rem;
+      display: flex; align-items: center; gap: 6px;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+    #themeBtn:hover { background: var(--surface2); }
+
+    #quitBtn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 20px;
+      padding: 7px 16px;
+      cursor: pointer;
+      font-size: .875rem;
+      display: flex; align-items: center; gap: 6px;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    #quitBtn:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: color-mix(in srgb, var(--red) 10%, transparent);
+    }
+
+    /* ───────────── Card ───────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px var(--shadow);
+    }
+
+    .card-title {
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* ───────────── Textarea ───────────── */
+    #queryInput {
+      width: 100%;
+      min-height: 130px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--fg);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: .8rem;
+      line-height: 1.65;
+      padding: 12px 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #queryInput:focus { border-color: var(--accent); }
+
+    /* ───────────── Buttons ───────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: .9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-run {
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+    }
+    .btn-run:hover:not(:disabled) {
+      background: var(--btn-hov);
+      transform: translateY(-1px);
+    }
+    .btn-run:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-export {
+      background: var(--green);
+      color: #1a1a1a;
+    }
+    [data-theme="light"] .btn-export { color: #fff; }
+    .btn-export:hover:not(:disabled) {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+    .btn-export:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ───────────── Status badge ───────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .85rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+    .badge-ok  { background: rgba(80,250,123,.15); color: var(--green); border: 1px solid rgba(80,250,123,.35); }
+    .badge-err { background: rgba(255, 85, 85,.15); color: var(--red);  border: 1px solid rgba(255,85,85,.35); }
+
+    /* ───────────── Spinner ───────────── */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid var(--muted);
+      border-top-color: var(--btn-fg);
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ───────────── Row util ───────────── */
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    /* ───────────── Options panel ───────────── */
+    .panel { display: none; }
+    .panel.on { display: block; }
+
+    /* ───────────── Section group ───────────── */
+    .sg { margin-bottom: 22px; }
+    .sg:last-child { margin-bottom: 0; }
+
+    .sl {
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ───────────── Pill toggles (checkbox & radio) ───────────── */
+    .pills { display: flex; flex-wrap: wrap; gap: 9px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      background: var(--tag);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: .875rem;
+      transition: all .15s;
+      user-select: none;
+    }
+    .pill input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+
+    .pill:has(input:checked) {
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .pill small { color: var(--muted); font-size: .75rem; }
+    .pill:has(input:checked) small { color: color-mix(in srgb, var(--accent) 70%, var(--fg)); }
+
+    /* ───────────── Divider ───────────── */
+    .hr { height: 1px; background: var(--border); margin: 22px 0; }
+
+    /* ───────────── Export row ───────────── */
+    .export-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .export-row > div { display: flex; flex-direction: column; gap: 6px; }
+
+    select.sel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--fg);
+      font-size: .9rem;
+      padding: 9px 14px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s;
+      appearance: auto;
+    }
+    select.sel:focus { border-color: var(--accent); }
+
+    #exportMeta {
+      font-size: .8rem;
+      color: var(--muted);
+      align-self: center;
+    }
+
+    /* ───────────── Preview table ───────────── */
+    .tbl-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    thead th {
+      background: var(--surface2);
+      padding: 10px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    td {
+      padding: 8px 16px;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    td.c-phone  { font-family: 'JetBrains Mono', monospace; color: var(--cyan); }
+    td.c-type   { color: var(--orange); }
+    td.c-coords { color: var(--muted); font-size: .75rem; }
+
+    .empty {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--muted);
+    }
+    .empty .ico { font-size: 2.5rem; margin-bottom: 10px; }
+
+    /* ───────────── Preview header ───────────── */
+    .preview-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .preview-hdr .card-title { margin-bottom: 0; }
+    #previewCount { color: var(--accent); font-size: .85rem; font-weight: 600; }
+
+    /* ───────────── Toast ───────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: .875rem;
+      font-weight: 500;
+      box-shadow: 0 4px 20px var(--shadow);
+      z-index: 9999;
+      animation: toastIn .3s ease;
+      max-width: 320px;
+    }
+    .toast-ok  { background: var(--green); color: #1a1a1a; }
+    .toast-err { background: var(--red);   color: #fff; }
+    @keyframes toastIn {
+      from { transform: translateX(110%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    /* ───────────── Generator form ───────────── */
+    .gen-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 560px) { .gen-grid { grid-template-columns: 1fr; } }
+
+    .gen-field { display: flex; flex-direction: column; gap: 6px; }
+
+    .gen-input {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--fg);
+      font-size: .9rem;
+      padding: 9px 14px;
+      outline: none;
+      transition: border-color .2s;
+      width: 100%;
+    }
+    .gen-input:focus { border-color: var(--accent); }
+    .gen-input::placeholder { color: var(--muted); }
+
+    .gen-hint {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .btn-gen {
+      background: color-mix(in srgb, var(--accent) 20%, transparent);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-size: .9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .2s;
+    }
+    .btn-gen:hover {
+      background: color-mix(in srgb, var(--accent) 30%, transparent);
+      transform: translateY(-1px);
+    }
+
+    /* collapsible generator */
+    .gen-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    .gen-toggle .arrow {
+      font-size: .75rem;
+      color: var(--muted);
+      transition: transform .2s;
+    }
+    .gen-toggle.open .arrow { transform: rotate(180deg); }
+    .gen-body { margin-top: 20px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🗺</div>
+      <div>
+        <h1>Overpass <em>Extractor</em></h1>
+        <div class="subtitle">Extraction &amp; transformation de données OSM</div>
+      </div>
+    </div>
+    <div class="header-btns">
+      <button id="themeBtn" onclick="toggleTheme()">🌙 Thème sombre</button>
+      <button id="quitBtn" onclick="quitApp()">✕ Quitter</button>
+    </div>
+  </header>
+
+  <!-- Generator card -->
+  <div class="card">
+    <div class="gen-toggle open" id="genToggle" onclick="toggleGen()">
+      <div class="card-title" style="margin-bottom:0">⚡ Générer une requête automatiquement</div>
+      <span class="arrow">▼</span>
+    </div>
+
+    <div class="gen-body" id="genBody">
+      <div class="gen-grid">
+        <div class="gen-field">
+          <div class="sl">Ville / Zone</div>
+          <input type="text" id="genCity" class="gen-input" placeholder="ex : Angers, Paris, Lyon…">
+          <span class="gen-hint">Nom exact tel qu'il apparaît sur OpenStreetMap</span>
+        </div>
+        <div class="gen-field">
+          <div class="sl">Type de lieu</div>
+          <select id="genType" class="sel" style="width:100%" onchange="onTypeChange()">
+            <option value="">— Tous les types —</option>
+            <optgroup label="Restauration">
+              <option value="amenity=restaurant">Restaurant</option>
+              <option value="amenity=cafe">Café</option>
+              <option value="amenity=bar">Bar / Pub</option>
+              <option value="amenity=fast_food">Fast-food</option>
+              <option value="shop=bakery">Boulangerie</option>
+              <option value="shop=butcher">Boucherie</option>
+            </optgroup>
+            <optgroup label="Santé">
+              <option value="amenity=pharmacy">Pharmacie</option>
+              <option value="amenity=doctors">Médecin</option>
+              <option value="amenity=dentist">Dentiste</option>
+              <option value="amenity=hospital">Hôpital / Clinique</option>
+              <option value="amenity=veterinary">Vétérinaire</option>
+            </optgroup>
+            <optgroup label="Commerce">
+              <option value="shop=supermarket">Supermarché</option>
+              <option value="shop=convenience">Épicerie</option>
+              <option value="shop=hairdresser">Coiffeur</option>
+              <option value="shop=car_repair">Garage / Auto</option>
+              <option value="shop=florist">Fleuriste</option>
+            </optgroup>
+            <optgroup label="Services">
+              <option value="amenity=bank">Banque</option>
+              <option value="amenity=post_office">La Poste</option>
+              <option value="amenity=fuel">Station essence</option>
+              <option value="tourism=hotel">Hôtel</option>
+              <option value="tourism=guest_house">Chambre d'hôtes</option>
+            </optgroup>
+            <optgroup label="Culture &amp; Loisirs">
+              <option value="tourism=museum">Musée</option>
+              <option value="amenity=library">Bibliothèque</option>
+              <option value="amenity=theatre">Théâtre</option>
+              <option value="leisure=fitness_centre">Salle de sport</option>
+            </optgroup>
+            <optgroup label="Autre">
+              <option value="custom">Personnalisé…</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- Custom key/value (hidden unless custom selected) -->
+      <div id="customRow" style="display:none; margin-top:14px">
+        <div class="gen-grid">
+          <div class="gen-field">
+            <div class="sl">Clé OSM</div>
+            <input type="text" id="customKey" class="gen-input" placeholder="ex : amenity, shop, tourism">
+          </div>
+          <div class="gen-field">
+            <div class="sl">Valeur OSM</div>
+            <input type="text" id="customVal" class="gen-input" placeholder="ex : restaurant, museum">
+          </div>
+        </div>
+        <div class="gen-hint" style="margin-top:6px">
+          Consultez <strong>taginfo.openstreetmap.org</strong> pour trouver les clés/valeurs disponibles.
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:18px; justify-content:space-between; flex-wrap:wrap; gap:12px">
+        <label class="pill">
+          <input type="checkbox" id="genPhoneOnly" checked>
+          Seulement les lieux avec numéro de téléphone
+        </label>
+        <button class="btn-gen" onclick="generateQuery()">⚡ Générer la requête</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Query -->
+  <div class="card">
+    <div class="card-title">Requête Overpass QL</div>
+    <textarea id="queryInput" spellcheck="false">[out:json][timeout:25];
+(
+  node["name"]["phone"](47.3,-0.7,47.6,-0.4);
+  way["name"]["phone"](47.3,-0.7,47.6,-0.4);
+);
+out center;</textarea>
+    <div class="row">
+      <button class="btn btn-run" id="runBtn" onclick="runQuery()">
+        <span id="runIcon">▶</span> Exécuter la requête
+      </button>
+      <div id="statusBadge" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Options panel (hidden until results) -->
+  <div class="card panel" id="optionsPanel">
+
+    <!-- Fields -->
+    <div class="sg">
+      <div class="sl">Champs à exporter</div>
+      <div class="pills">
+        <label class="pill">
+          <input type="checkbox" name="field" value="name" checked onchange="updatePreview()"> Nom
+        </label>
+        <label class="pill">
+          <input type="checkbox" name="field" value="phone" checked onchange="updatePreview()"> Téléphone
+        </label>
+        <label class="pill">
+          <input type="checkbox" name="field" value="type" onchange="updatePreview()"> Type de lieu
+        </label>
+        <label class="pill">
+          <input type="checkbox" name="field" value="lat" onchange="updatePreview()"> Latitude
+        </label>
+        <label class="pill">
+          <input type="checkbox" name="field" value="lon" onchange="updatePreview()"> Longitude
+        </label>
+      </div>
+    </div>
+
+    <!-- Phone format -->
+    <div class="sg" id="phoneFmtGroup">
+      <div class="sl">Format du numéro de téléphone</div>
+      <div class="pills">
+        <label class="pill">
+          <input type="radio" name="phoneFmt" value="raw" onchange="updatePreview()">
+          Brut <small>+33 2 41 21 09 21</small>
+        </label>
+        <label class="pill">
+          <input type="radio" name="phoneFmt" value="normalized" checked onchange="updatePreview()">
+          Normalisé <small>02 41 21 09 21</small>
+        </label>
+        <label class="pill">
+          <input type="radio" name="phoneFmt" value="masked" onchange="updatePreview()">
+          Masqué <small>02 ** ** ** **</small>
+        </label>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <!-- Export -->
+    <div class="export-row">
+      <div>
+        <div class="sl">Format d'export</div>
+        <select class="sel" id="exportFmt">
+          <option value="txt">TXT (tabulations)</option>
+          <option value="csv">CSV</option>
+          <option value="json">JSON</option>
+        </select>
+      </div>
+      <button class="btn btn-export" id="exportBtn" onclick="exportData()">
+        ↓ Exporter
+      </button>
+      <span id="exportMeta"></span>
+    </div>
+
+  </div>
+
+  <!-- Preview panel (hidden until results) -->
+  <div class="card panel" id="previewPanel">
+    <div class="preview-hdr">
+      <div class="card-title">Aperçu</div>
+      <span id="previewCount"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead id="tHead"></thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+  /* ─── State ─── */
+  let allRecords = [];
+
+  /* ─── Theme ─── */
+  function initTheme() {
+    const t = localStorage.getItem('theme') || 'dark';
+    applyTheme(t);
+  }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('themeBtn').textContent =
+      t === 'dark' ? '☀️ Thème clair' : '🌙 Thème sombre';
+  }
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  }
+
+  /* ─── Query execution ─── */
+  async function runQuery() {
+    const query = document.getElementById('queryInput').value.trim();
+    if (!query) { toast('Veuillez entrer une requête', 'err'); return; }
+
+    const runBtn  = document.getElementById('runBtn');
+    const runIcon = document.getElementById('runIcon');
+    const badge   = document.getElementById('statusBadge');
+
+    runBtn.disabled = true;
+    runIcon.innerHTML = '<span class="spinner"></span>';
+    badge.style.display = 'none';
+
+    try {
+      const res  = await fetch('/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      const data = await res.json();
+
+      badge.style.display = 'inline-flex';
+      if (data.success) {
+        allRecords = data.records;
+        badge.className = 'badge badge-ok';
+        badge.textContent = `✓ ${data.count} résultat${data.count !== 1 ? 's' : ''} trouvé${data.count !== 1 ? 's' : ''}`;
+        document.getElementById('exportMeta').textContent = `${data.count} entrée${data.count !== 1 ? 's' : ''}`;
+        showPanels();
+        updatePreview();
+      } else {
+        badge.className = 'badge badge-err';
+        badge.textContent = `✗ ${data.error}`;
+      }
+    } catch {
+      badge.style.display = 'inline-flex';
+      badge.className = 'badge badge-err';
+      badge.textContent = '✗ Erreur réseau';
+    } finally {
+      runBtn.disabled = false;
+      runIcon.textContent = '▶';
+    }
+  }
+
+  function showPanels() {
+    document.getElementById('optionsPanel').classList.add('on');
+    document.getElementById('previewPanel').classList.add('on');
+  }
+
+  /* ─── Phone helpers (mirrors Python logic) ─── */
+  function normalizePhone(raw) {
+    if (!raw) return '';
+    let c = raw.replace(/[\s\-\.\(\)]/g, '');
+    if (c.length < 9) return '';
+    if (c.startsWith('+33'))   c = '0' + c.slice(3);
+    else if (c.startsWith('0033')) c = '0' + c.slice(4);
+    if (!/^0\d{9}$/.test(c)) return '';
+    return c.match(/.{2}/g).join(' ');
+  }
+  function maskPhone(norm) {
+    if (!norm) return '';
+    const p = norm.split(' ');
+    return p.length === 5 ? p[0] + ' ' + p.slice(1).map(() => '**').join(' ') : '';
+  }
+  function getPhone(rec) {
+    const fmt = document.querySelector('input[name="phoneFmt"]:checked')?.value || 'normalized';
+    if (fmt === 'raw')        return rec.phone_raw;
+    if (fmt === 'masked')     return rec.phone_masked || maskPhone(rec.phone_normalized);
+    return rec.phone_normalized || normalizePhone(rec.phone_raw);
+  }
+
+  /* ─── Selected fields ─── */
+  function selectedFields() {
+    return [...document.querySelectorAll('input[name="field"]:checked')].map(el => el.value);
+  }
+
+  const LABELS = { name: 'Nom', phone: 'Téléphone', type: 'Type', lat: 'Latitude', lon: 'Longitude' };
+
+  /* ─── Update preview table ─── */
+  function updatePreview() {
+    const fields = selectedFields();
+
+    // Show/hide phone format group
+    document.getElementById('phoneFmtGroup').style.display =
+      fields.includes('phone') ? '' : 'none';
+
+    const preview = allRecords.slice(0, 100);
+    const head = document.getElementById('tHead');
+    const body = document.getElementById('tBody');
+
+    document.getElementById('previewCount').textContent =
+      `${allRecords.length} résultat${allRecords.length !== 1 ? 's' : ''} — aperçu des 100 premiers`;
+
+    if (!fields.length) {
+      head.innerHTML = '';
+      body.innerHTML = `<tr><td><div class="empty"><div class="ico">☑</div>Sélectionnez au moins un champ</div></td></tr>`;
+      return;
+    }
+
+    head.innerHTML = '<tr>' + fields.map(f => `<th>${LABELS[f] || f}</th>`).join('') + '</tr>';
+
+    if (!preview.length) {
+      body.innerHTML = `<tr><td colspan="${fields.length}"><div class="empty"><div class="ico">🔍</div>Aucun résultat</div></td></tr>`;
+      return;
+    }
+
+    body.innerHTML = preview.map(rec => {
+      const cells = fields.map(f => {
+        let val = '', cls = '';
+        if (f === 'phone') {
+          val = getPhone(rec); cls = 'c-phone';
+        } else if (f === 'type') {
+          val = rec.type; cls = 'c-type';
+        } else if (f === 'lat' || f === 'lon') {
+          val = rec[f] != null ? Number(rec[f]).toFixed(6) : ''; cls = 'c-coords';
+        } else {
+          val = rec[f] || '';
+        }
+        return `<td class="${cls}" title="${esc(val)}">${esc(val)}</td>`;
+      }).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ─── Export (100% client-side) ─── */
+  function exportData() {
+    if (!allRecords.length) return;
+    const fields = selectedFields();
+    if (!fields.length) { toast('Sélectionnez au moins un champ', 'err'); return; }
+
+    const fmt = document.getElementById('exportFmt').value;
+
+    const rows = allRecords.map(rec => {
+      const row = {};
+      fields.forEach(f => {
+        row[f] = f === 'phone' ? getPhone(rec) : (rec[f] ?? '');
+      });
+      return row;
+    }).filter(row => fields.some(f => String(row[f] ?? '').trim() !== ''));
+
+    let content, mime, filename;
+
+    if (fmt === 'csv') {
+      const hdr   = fields.map(f => LABELS[f] || f).join(',');
+      const lines = rows.map(r =>
+        fields.map(f => {
+          const v = String(r[f] ?? '');
+          return v.includes(',') || v.includes('"') || v.includes('\n')
+            ? `"${v.replace(/"/g, '""')}"` : v;
+        }).join(',')
+      );
+      content  = '\uFEFF' + [hdr, ...lines].join('\n');  // BOM for Excel
+      mime     = 'text/csv;charset=utf-8';
+      filename = 'export.csv';
+
+    } else if (fmt === 'json') {
+      content  = JSON.stringify(rows, null, 2);
+      mime     = 'application/json';
+      filename = 'export.json';
+
+    } else { // txt
+      const lines = rows.map(r => fields.map(f => r[f] ?? '').join('\t'));
+      content  = '\uFEFF' + lines.join('\n');
+      mime     = 'text/plain;charset=utf-8';
+      filename = 'export.txt';
+    }
+
+    const blob = new Blob([content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast(`✓ ${filename} exporté (${allRecords.length} entrée${allRecords.length !== 1 ? 's' : ''})`, 'ok');
+  }
+
+  /* ─── Toast notification ─── */
+  function toast(msg, type = 'ok') {
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  /* ─── Generator ─── */
+  function toggleGen() {
+    const toggle = document.getElementById('genToggle');
+    const body   = document.getElementById('genBody');
+    const open   = toggle.classList.toggle('open');
+    body.style.display = open ? '' : 'none';
+  }
+
+  function onTypeChange() {
+    const val = document.getElementById('genType').value;
+    document.getElementById('customRow').style.display = val === 'custom' ? '' : 'none';
+  }
+
+  function generateQuery() {
+    const city = document.getElementById('genCity').value.trim();
+    if (!city) { toast('Entrez un nom de ville', 'err'); return; }
+
+    const typeVal   = document.getElementById('genType').value;
+    const phoneOnly = document.getElementById('genPhoneOnly').checked;
+
+    // Build OSM tag filter
+    let tagFilter = '';
+    if (typeVal === 'custom') {
+      const k = document.getElementById('customKey').value.trim();
+      const v = document.getElementById('customVal').value.trim();
+      if (!k) { toast('Entrez une clé OSM', 'err'); return; }
+      tagFilter = v ? `["${k}"="${v}"]` : `["${k}"]`;
+    } else if (typeVal) {
+      const [k, v] = typeVal.split('=');
+      tagFilter = `["${k}"="${v}"]`;
+    }
+
+    // Build phone filters
+    const phoneFilters = phoneOnly
+      ? ['["phone"]', '["contact:phone"]']
+      : [''];
+
+    // Build node/way/relation lines
+    const osm  = ['node', 'way', 'relation'];
+    const lines = osm.flatMap(t =>
+      phoneFilters.map(pf => `  ${t}${tagFilter}${pf}(area.searchArea);`)
+    );
+
+    const query =
+`[out:csv(name, phone, "contact:phone", amenity, ::lat, ::lon)][timeout:90];
+area[name="${city}"]->.searchArea;
+(
+${lines.join('\n')}
+);
+out center;`;
+
+    document.getElementById('queryInput').value = query;
+    toast(`Requête générée pour "${city}"`, 'ok');
+    document.getElementById('queryInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* ─── Quit ─── */
+  async function quitApp() {
+    if (!confirm('Fermer l\'application ?')) return;
+    try { await fetch('/api/quit', { method: 'POST' }); } catch {}
+    window.close();
+  }
+
+  /* ─── Init ─── */
+  initTheme();
+</script>
+</body>
+</html>

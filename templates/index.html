@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Overpass Extractor</title>
+  <title>OSMINT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23282a36'/><path d='M16 4C11.58 4 8 7.58 8 12c0 6 8 16 8 16s8-10 8-16c0-4.42-3.58-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z' fill='%23bd93f9'/></svg>">
   <style>
     /* ───────────── Themes ───────────── */
     :root[data-theme="dark"] {
@@ -45,6 +48,62 @@
       --btn-fg:   #ffffff;
       --btn-hov:  #4a57a8;
       --tag:      #e9ecef;
+    }
+
+    /* ───────────── Brand banner ───────────── */
+    .brand-banner {
+      background: #12111a;
+      border-bottom: 1px solid rgba(255,121,198,.25);
+      padding: 22px 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,121,198,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,121,198,.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+    [data-theme="light"] .brand-banner {
+      background: #1e0d26;
+    }
+    .brand-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(1.4rem, 4vw, 2.4rem);
+      font-weight: 400;
+      color: #ff00aa;
+      letter-spacing: .18em;
+      text-shadow:
+        0 0 4px #fff,
+        0 0 10px #ff00aa,
+        0 0 25px #ff00aa,
+        0 0 55px #ff00aa,
+        0 0 100px rgba(255,0,170,.6);
+      display: block;
+      position: relative;
+      animation: flicker 8s infinite;
+    }
+    .brand-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(.45rem, 1.2vw, .6rem);
+      color: rgba(255,0,170,.5);
+      letter-spacing: .55em;
+      text-transform: uppercase;
+      display: block;
+      margin-top: 6px;
+      position: relative;
+    }
+    @keyframes flicker {
+      0%,95%,100% { opacity: 1; }
+      96%          { opacity: .85; }
+      97%          { opacity: 1; }
+      98%          { opacity: .7; }
+      99%          { opacity: 1; }
     }
 
     /* ───────────── Reset / Base ───────────── */
@@ -437,6 +496,12 @@
   </style>
 </head>
 <body>
+
+<div class="brand-banner">
+  <span class="brand-name">MrW3ST</span>
+  <span class="brand-sub">Tools</span>
+</div>
+
 <div class="wrap">
 
   <!-- Header -->
@@ -444,7 +509,7 @@
     <div class="logo">
       <div class="logo-icon">🗺</div>
       <div>
-        <h1>Overpass <em>Extractor</em></h1>
+        <h1>OSM<em>INT</em></h1>
         <div class="subtitle">Extraction &amp; transformation de données OSM</div>
       </div>
     </div>

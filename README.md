@@ -1,7 +1,7 @@
-# Overpass Extractor
+# OSMINT
 
-Outil local d'extraction et de transformation de données OpenStreetMap via l'API Overpass.
-Interface web avec thème clair / Dracula dark.
+> **Outil local d'extraction et de transformation de données OpenStreetMap via l'API Overpass.**
+> Interface web avec thème clair / Dracula dark — by **MrW3ST**
 
 ---
 
@@ -25,7 +25,7 @@ Interface web avec thème clair / Dracula dark.
 **Prérequis :** Python 3.10+
 
 ```bash
-cd extract_overpass_phonenumber
+cd OSMINT
 pip install -r requirements.txt
 ```
 
@@ -79,7 +79,7 @@ Cliquer **↓ Exporter** pour télécharger le fichier.
 ## Structure du projet
 
 ```
-extract_overpass_phonenumber/
+OSMINT/
 ├── app.py               # Serveur Flask + parsing JSON/CSV Overpass
 ├── requirements.txt
 └── templates/
@@ -102,3 +102,112 @@ extract_overpass_phonenumber/
 - L'API Overpass est publique et gratuite — éviter les requêtes trop larges (grande bbox + pas de filtre) qui peuvent dépasser le timeout de 90s.
 - Les numéros courts (type `3631`) sont ignorés lors de la normalisation.
 - Les lignes sans aucune valeur sont automatiquement exclues de l'export.
+
+---
+
+---
+
+# OSMINT — English
+
+> **Local tool for extracting and transforming OpenStreetMap data via the Overpass API.**
+> Web interface with light / Dracula dark theme — by **MrW3ST**
+
+---
+
+## Features
+
+- **Query generator** — simple form (city + place type) that automatically builds the Overpass QL query
+- **Direct execution** — sends the query to the Overpass API and retrieves results (both `[out:json]` and `[out:csv]` formats supported)
+- **Field selection** — toggle on/off: Name, Phone, Place type, Latitude, Longitude
+- **Phone number formatting** — 3 options:
+  - Raw: `+33 2 41 21 09 21`
+  - Normalized: `02 41 21 09 21`
+  - Masked: `02 ** ** ** **`
+- **Export** — TXT (tab-separated), CSV (Excel-compatible, UTF-8 BOM), JSON
+- **Live preview** — table of the first 100 results, updated in real time
+- **Theme** — light or Dracula dark, remembered between sessions
+
+---
+
+## Installation
+
+**Requirements:** Python 3.10+
+
+```bash
+cd OSMINT
+pip install -r requirements.txt
+```
+
+---
+
+## Running
+
+```bash
+python3 app.py
+```
+
+The browser opens automatically at `http://localhost:5000`.
+To quit, use the **✕ Quit** button in the interface.
+
+---
+
+## Usage
+
+### 1. Auto-generate a query
+
+Fill in the form at the top of the page:
+
+| Field | Example |
+|---|---|
+| City / Area | `Angers` |
+| Place type | `Restaurant`, `Pharmacy`, `Hotel`… |
+| Custom | OSM key + value (e.g. `shop` / `florist`) |
+
+Check **"Only places with a phone number"** to retrieve only entries with a contact.
+Click **⚡ Generate query** — the textarea fills automatically.
+
+> The city name must match exactly how it appears on OpenStreetMap.
+> If unsure, check on [openstreetmap.org](https://www.openstreetmap.org).
+
+### 2. Run a query manually
+
+Paste any Overpass QL query directly into the textarea. Both `[out:json]` and `[out:csv(...)]` formats are accepted.
+
+Click **▶ Run query**.
+
+### 3. Configure the export
+
+- **Fields** — select which columns to include
+- **Phone format** — choose between raw, normalized, or masked
+- **File format** — TXT, CSV, or JSON
+
+Click **↓ Export** to download the file.
+
+---
+
+## Project structure
+
+```
+OSMINT/
+├── app.py               # Flask server + Overpass JSON/CSV parsing
+├── requirements.txt
+└── templates/
+    └── index.html       # Full interface (HTML/CSS/JS)
+```
+
+---
+
+## Dependencies
+
+| Package | Role |
+|---|---|
+| `flask` | Local web server |
+| `requests` | Overpass API calls |
+
+---
+
+## Notes
+
+- The Overpass API is public and free — avoid overly broad queries (large bounding box + no filter) that may exceed the 90s timeout.
+- Short numbers (e.g. `3631`) are ignored during normalization.
+- Rows with no values are automatically excluded from the export.

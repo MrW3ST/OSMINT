@@ -11,9 +11,6 @@
 - **Exécution directe** — envoie la requête à l'API Overpass et récupère les résultats (formats `[out:json]` et `[out:csv]` supportés)
 - **Sélection des champs** — cocher/décocher : Nom, Téléphone, Type de lieu, Latitude, Longitude
 - **Transformation des numéros** — 3 formats au choix :
-  - Brut : `+33 2 41 21 09 21`
-  - Normalisé : `02 41 21 09 21`
-  - Masqué : `02 ** ** ** **`
 - **Export** — TXT (tabulations), CSV (compatible Excel, BOM UTF-8), JSON
 - **Aperçu live** — tableau des 100 premiers résultats, mis à jour en temps réel
 - **Thème** — clair ou Dracula dark, mémorisé entre les sessions
@@ -119,10 +116,7 @@ OSMINT/
 - **Query generator** — simple form (city + place type) that automatically builds the Overpass QL query
 - **Direct execution** — sends the query to the Overpass API and retrieves results (both `[out:json]` and `[out:csv]` formats supported)
 - **Field selection** — toggle on/off: Name, Phone, Place type, Latitude, Longitude
-- **Phone number formatting** — 3 options:
-  - Raw: `+33 2 41 21 09 21`
-  - Normalized: `02 41 21 09 21`
-  - Masked: `02 ** ** ** **`
+- **Phone number formatting**:
 - **Export** — TXT (tab-separated), CSV (Excel-compatible, UTF-8 BOM), JSON
 - **Live preview** — table of the first 100 results, updated in real time
 - **Theme** — light or Dracula dark, remembered between sessions
